@@ -170,6 +170,7 @@ export class FileManager {
         const i = parseInt(index);
         let file = this.ownFiles[i];
         if (
+          !file.path.match(/excalidraw/i) &&
           !(
             this.file_hashes.hasOwnProperty(file.path) &&
             file.getHash() === this.file_hashes[file.path]

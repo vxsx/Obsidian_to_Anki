@@ -746,21 +746,35 @@ async function settingToData(app, settings, fields_dict) {
         fields: {},
         options: {
             allowDuplicate: false,
-            duplicateScope: "deck"
+            duplicateScope: "deck",
         },
-        tags: [settings.Defaults.Tag]
+        tags: [settings.Defaults.Tag],
     };
-    result.EXISTING_IDS = await invoke('findNotes', { query: "" });
+    result.EXISTING_IDS = (await invoke("findNotes", {
+        query: "",
+    }));
+    console.log(result.EXISTING_IDS);
     //RegExp section
-    result.FROZEN_REGEXP = new RegExp(escapeRegex(settings.Syntax["Frozen Fields Line"]) + String.raw ` - (.*?):\n((?:[^\n][\n]?)+)`, "g");
-    result.DECK_REGEXP = new RegExp(String.raw `^` + escapeRegex(settings.Syntax["Target Deck Line"]) + String.raw `(?:\n|: )(.*)`, "m");
-    result.TAG_REGEXP = new RegExp(String.raw `^` + escapeRegex(settings.Syntax["File Tags Line"]) + String.raw `(?:\n|: )(.*)`, "m");
-    result.NOTE_REGEXP = new RegExp(String.raw `^` + escapeRegex(settings.Syntax["Begin Note"]) + String.raw `\n([\s\S]*?\n)` + escapeRegex(settings.Syntax["End Note"]), "gm");
-    result.INLINE_REGEXP = new RegExp(escapeRegex(settings.Syntax["Begin Inline Note"]) + String.raw `(.*?)` + escapeRegex(settings.Syntax["End Inline Note"]), "g");
+    result.FROZEN_REGEXP = new RegExp(escapeRegex(settings.Syntax["Frozen Fields Line"]) +
+        String.raw ` - (.*?):\n((?:[^\n][\n]?)+)`, "g");
+    result.DECK_REGEXP = new RegExp(String.raw `^` +
+        escapeRegex(settings.Syntax["Target Deck Line"]) +
+        String.raw `(?:\n|: )(.*)`, "m");
+    result.TAG_REGEXP = new RegExp(String.raw `^` +
+        escapeRegex(settings.Syntax["File Tags Line"]) +
+        String.raw `(?:\n|: )(.*)`, "m");
+    result.NOTE_REGEXP = new RegExp(String.raw `^` +
+        escapeRegex(settings.Syntax["Begin Note"]) +
+        String.raw `\n([\s\S]*?\n)` +
+        escapeRegex(settings.Syntax["End Note"]), "gm");
+    result.INLINE_REGEXP = new RegExp(escapeRegex(settings.Syntax["Begin Inline Note"]) +
+        String.raw `(.*?)` +
+        escapeRegex(settings.Syntax["End Inline Note"]), "g");
     result.EMPTY_REGEXP = new RegExp(escapeRegex(settings.Syntax["Delete Note Line"]) + ID_REGEXP_STR, "g");
     //Just a simple transfer
     result.curly_cloze = settings.Defaults.CurlyCloze;
-    result.highlights_to_cloze = settings.Defaults["CurlyCloze - Highlights to Clozes"];
+    result.highlights_to_cloze =
+        settings.Defaults["CurlyCloze - Highlights to Clozes"];
     result.add_file_link = settings.Defaults["Add File Link"];
     result.comment = settings.Defaults["ID Comments"];
     result.add_context = settings.Defaults["Add Context"];
@@ -52642,15 +52656,18 @@ function id_to_str(identifier, inline = false, comment = false) {
 }
 function string_insert(text, position_inserts) {
     /*Insert strings in position_inserts into text, at indices.
-
-    position_inserts will look like:
-    [(0, "hi"), (3, "hello"), (5, "beep")]*/
+  
+      position_inserts will look like:
+      [(0, "hi"), (3, "hello"), (5, "beep")]*/
     let offset = 0;
     let sorted_inserts = position_inserts.sort((a, b) => a[0] - b[0]);
     for (let insertion of sorted_inserts) {
         let position = insertion[0];
         let insert_str = insertion[1];
-        text = text.slice(0, position + offset) + insert_str + text.slice(position + offset);
+        text =
+            text.slice(0, position + offset) +
+                insert_str +
+                text.slice(position + offset);
         offset += insert_str.length;
     }
     return text;
@@ -52671,7 +52688,7 @@ function contained_in(span, spans) {
 function* findignore(pattern, text, ignore_spans) {
     let matches = text.matchAll(pattern);
     for (let match of matches) {
-        if (!(contained_in([match.index, match.index + match[0].length], ignore_spans))) {
+        if (!contained_in([match.index, match.index + match[0].length], ignore_spans)) {
             yield match;
         }
     }
@@ -52741,7 +52758,7 @@ class AbstractFile {
     getContextAtIndex(position) {
         let result = this.path;
         let currentContext = [];
-        if (!(this.file_cache.hasOwnProperty('headings'))) {
+        if (!this.file_cache.hasOwnProperty("headings")) {
             return result;
         }
         for (let currentHeading of this.file_cache.headings) {
@@ -52829,11 +52846,17 @@ class AllFile extends AbstractFile {
         this.ignore_spans.push(...spans(this.data.FROZEN_REGEXP, this.file));
         const deck_result = this.file.match(this.data.DECK_REGEXP);
         if (deck_result) {
-            this.ignore_spans.push([deck_result.index, deck_result.index + deck_result[0].length]);
+            this.ignore_spans.push([
+                deck_result.index,
+                deck_result.index + deck_result[0].length,
+            ]);
         }
         const tag_result = this.file.match(this.data.TAG_REGEXP);
         if (tag_result) {
-            this.ignore_spans.push([tag_result.index, tag_result.index + tag_result[0].length]);
+            this.ignore_spans.push([
+                tag_result.index,
+                tag_result.index + tag_result[0].length,
+            ]);
         }
         this.ignore_spans.push(...spans(this.data.NOTE_REGEXP, this.file));
         this.ignore_spans.push(...spans(this.data.INLINE_REGEXP, this.file));
@@ -52858,7 +52881,12 @@ class AllFile extends AbstractFile {
     }
     scanNotes() {
         for (let note_match of this.file.matchAll(this.data.NOTE_REGEXP)) {
-            let [note, position] = [note_match[1], note_match.index + note_match[0].indexOf(note_match[1]) + note_match[1].length];
+            let [note, position] = [
+                note_match[1],
+                note_match.index +
+                    note_match[0].indexOf(note_match[1]) +
+                    note_match[1].length,
+            ];
             // That second thing essentially gets the index of the end of the first capture group.
             let parsed = new Note(note, this.data.fields_dict, this.data.curly_cloze, this.data.highlights_to_cloze, this.formatter).parse(this.target_deck, this.url, this.frozen_fields_dict, this.data, this.data.add_context ? this.getContextAtIndex(note_match.index) : "");
             if (parsed.identifier == null) {
@@ -52886,7 +52914,12 @@ class AllFile extends AbstractFile {
     }
     scanInlineNotes() {
         for (let note_match of this.file.matchAll(this.data.INLINE_REGEXP)) {
-            let [note, position] = [note_match[1], note_match.index + note_match[0].indexOf(note_match[1]) + note_match[1].length];
+            let [note, position] = [
+                note_match[1],
+                note_match.index +
+                    note_match[0].indexOf(note_match[1]) +
+                    note_match[1].length,
+            ];
             // That second thing essentially gets the index of the end of the first capture group.
             let parsed = new InlineNote(note, this.data.fields_dict, this.data.curly_cloze, this.data.highlights_to_cloze, this.formatter).parse(this.target_deck, this.url, this.frozen_fields_dict, this.data, this.data.add_context ? this.getContextAtIndex(note_match.index) : "");
             if (parsed.identifier == null) {
@@ -52915,18 +52948,19 @@ class AllFile extends AbstractFile {
             for (let search_tags of [true, false]) {
                 let id_str = search_id ? ID_REGEXP_STR : "";
                 let tag_str = search_tags ? TAG_REGEXP_STR : "";
-                let regexp = new RegExp(regexp_str + tag_str + id_str, 'gm');
+                let regexp = new RegExp(regexp_str + tag_str + id_str, "gm");
                 for (let match of findignore(regexp, this.file, this.ignore_spans)) {
                     this.ignore_spans.push([match.index, match.index + match[0].length]);
                     const parsed = new RegexNote(match, note_type, this.data.fields_dict, search_tags, search_id, this.data.curly_cloze, this.data.highlights_to_cloze, this.formatter).parse(this.target_deck, this.url, this.frozen_fields_dict, this.data, this.data.add_context ? this.getContextAtIndex(match.index) : "");
                     if (search_id) {
-                        if (!(this.data.EXISTING_IDS.includes(parsed.identifier))) {
+                        if (!this.data.EXISTING_IDS.includes(parsed.identifier)) {
                             if (parsed.identifier == CLOZE_ERROR) {
                                 // This means it wasn't actually a note! So we should remove it from ignore_spans
                                 this.ignore_spans.pop();
                                 continue;
                             }
                             console.warn("Note with id", parsed.identifier, " in file ", this.path, " does not exist in Anki!");
+                            // this.regex_notes_to_add.push(parsed.note);
                         }
                         else {
                             this.notes_to_edit.push(parsed);
@@ -52956,7 +52990,9 @@ class AllFile extends AbstractFile {
                 this.search(note_type, regexp_str);
             }
         }
-        this.all_notes_to_add = this.notes_to_add.concat(this.inline_notes_to_add).concat(this.regex_notes_to_add);
+        this.all_notes_to_add = this.notes_to_add
+            .concat(this.inline_notes_to_add)
+            .concat(this.regex_notes_to_add);
         this.scanDeletions();
     }
     fix_newline_ids() {
@@ -52967,21 +53003,30 @@ class AllFile extends AbstractFile {
         this.id_indexes.forEach((id_position, index) => {
             const identifier = this.note_ids[index];
             if (identifier) {
-                normal_inserts.push([id_position, id_to_str(identifier, false, this.data.comment)]);
+                normal_inserts.push([
+                    id_position,
+                    id_to_str(identifier, false, this.data.comment),
+                ]);
             }
         });
         let inline_inserts = [];
         this.inline_id_indexes.forEach((id_position, index) => {
             const identifier = this.note_ids[index + this.notes_to_add.length]; //Since regular then inline
             if (identifier) {
-                inline_inserts.push([id_position, id_to_str(identifier, true, this.data.comment)]);
+                inline_inserts.push([
+                    id_position,
+                    id_to_str(identifier, true, this.data.comment),
+                ]);
             }
         });
         let regex_inserts = [];
         this.regex_id_indexes.forEach((id_position, index) => {
             const identifier = this.note_ids[index + this.notes_to_add.length + this.inline_notes_to_add.length]; // Since regular then inline then regex
             if (identifier) {
-                regex_inserts.push([id_position, "\n" + id_to_str(identifier, false, this.data.comment)]);
+                regex_inserts.push([
+                    id_position,
+                    "\n" + id_to_str(identifier, false, this.data.comment),
+                ]);
             }
         });
         this.file = string_insert(this.file, normal_inserts.concat(inline_inserts).concat(regex_inserts));
@@ -53081,8 +53126,9 @@ class FileManager {
             if (this.ownFiles.hasOwnProperty(index)) {
                 const i = parseInt(index);
                 let file = this.ownFiles[i];
-                if (!(this.file_hashes.hasOwnProperty(file.path) &&
-                    file.getHash() === this.file_hashes[file.path])) {
+                if (!file.path.match(/excalidraw/i) &&
+                    !(this.file_hashes.hasOwnProperty(file.path) &&
+                        file.getHash() === this.file_hashes[file.path])) {
                     //Indicates it's changed or new
                     console.info("Scanning ", file.path, "as it's changed or new.");
                     file.scanFile();
